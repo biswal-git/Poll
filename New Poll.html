@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Community Poll</title>
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .poll-modern {
+      background: linear-gradient(to right, #f8f9fa, #e9ecef);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 420px;
+      margin: 40px auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .poll-modern h3 {
+      color: #343a40;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .option-modern {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .option-modern:hover {
+      border-color: #66d9e8;
+      box-shadow: 0 0 0 3px rgba(102, 217, 232, 0.3);
+    }
+
+    .option-modern.selected {
+      border: 2px solid #51cf66;
+      background: #e6fcf5;
+    }
+
+    .progress-modern {
+      background: #dee2e6;
+      border-radius: 6px;
+      height: 10px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .fill-modern {
+      height: 100%;
+      background: linear-gradient(to right, #63e6be, #38d9a9);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 6px;
+    }
+
+    textarea, input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 10px;
+      background: #38d9a9;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    #alreadyVotedMsg {
+      color: #fa5252;
+      margin-bottom: 10px;
+    }
+
+    #thankYouMessage {
+      color: #228be6;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="poll-modern">
+    <h3>Do you support the new app layout?</h3>
+
+    <div class="option-modern" onclick="vote(this, 'Yes')">
+      Yes
+      <div class="progress-modern"><div class="fill-modern" id="barYes"></div></div>
+    </div>
+
+    <div class="option-modern" onclick="vote(this, 'No')">
+      No
+      <div class="progress-modern"><div class="fill-modern" id="barNo" style="background:#ced4da;"></div></div>
+    </div>
+
+    <p id="alreadyVotedMsg"></p>
+    <p id="thankYouMessage"></p>
+
+    <div id="suggestionBox" style="display:none;">
+      <label for="mobile">Your Mobile Number</label>
+      <input type="tel" id="mobile" placeholder="e.g. 0123456789" maxlength="10" pattern="[0-9]{10}">
+
+      <label for="suggestion">Any suggestions?</label>
+      <textarea id="suggestion" rows="3" placeholder="Write your feedback..."></textarea>
+
+      <button onclick="submitSuggestion()">Submit!</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedVote = null;
+
+    function vote(el, choice) {
+      if (localStorage.getItem("votedPoll")) {
+        document.getElementById("alreadyVotedMsg").innerText = "You have already submitted your vote.";
+        return;
+      }
+
+      document.querySelectorAll(".option-modern").forEach(opt => opt.classList.remove("selected"));
+      el.classList.add("selected");
+
+      selectedVote = choice;
+      document.getElementById("thankYouMessage").innerText = "Thank you for voting!";
+      document.getElementById("alreadyVotedMsg").innerText = "";
+      document.getElementById("suggestionBox").style.display = "block";
+
+      if (choice === "Yes") {
+        document.getElementById("barYes").style.width = "70%";
+        document.getElementById("barNo").style.width = "30%";
+      } else {
+        document.getElementById("barYes").style.width = "30%";
+        document.getElementById("barNo").style.width = "70%";
+      }
+
+      const savedMobile = localStorage.getItem("userMobile");
+      if (savedMobile) {
+        document.getElementById("mobile").value = savedMobile;
+      }
+    }
+
+    function submitSuggestion() {
+      const mobile = document.getElementById("mobile").value.trim();
+      const suggestion = document.getElementById("suggestion").value.trim();
+
+      if (!selectedVote) {
+        alert("Please vote first.");
+        return;
+      }
+
+      if (!/^\d{10}$/.test(mobile)) {
+        alert("Please enter a valid 10-digit mobile number.");
+        return;
+      }
+
+      localStorage.setItem("userMobile", mobile);
+
+      fetch("https://script.google.com/macros/s/AKfycbytx1XPB2OBa36RP5nRue8BPMe-HQMXbmZJr26yBi6uAHsXRGwoxl-Fx4LcfcwdI9ln/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `vote=${encodeURIComponent(selectedVote)}&suggestion=${encodeURIComponent(suggestion)}&mobile=${encodeURIComponent(mobile)}`
+      }).then(() => {
+        alert("Thanks for your response!");
+        localStorage.setItem("votedPoll", selectedVote);
+        document.getElementById("suggestionBox").style.display = "none";
+        document.getElementById("mobile").value = "";
+        document.getElementById("suggestion").value = "";
+      });
+    }
+  </script>
+</body>
+</html>
